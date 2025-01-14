@@ -1,6 +1,11 @@
 # WTWR (What to Wear?): Back End
+This This project centers on developing a back-end server for the What to Wear (WTWR) application, designed to help users choose clothing based on the current local weather. Users can save, retrieve, and delete their clothing selections, and a Like feature allows them to mark their favorite garments.
 
-The back-end project is focused on creating a server for the WTWR application. You’ll gain a deeper understanding of how to work with databases, set up security and testing, and deploy web applications on a remote machine. The eventual goal is to create a server with an API and user authorization.
+TECHNOLOGIES
+
+Node.js
+MongoDB
+
 
 ## Running the Project
 
