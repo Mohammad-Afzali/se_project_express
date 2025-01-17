@@ -1,4 +1,4 @@
-const express = require("express");
+const express = require("express").Router();
 const { updateUser, getUser } = require("../controllers/user");
 const authorize = require("../middlewares/auth");
 
