@@ -17,16 +17,20 @@ const clothingItemSchema = new mongoose.Schema({
     type: String,
     required: true,
     validate: {
-      validator: (v) => validator.isURL(v),
-      message: "Not a valid link.",
+      validator(value) {
+        return validator.isURL(value);
+      },
+      message: "You must enter a valid URL",
     },
   },
   owner: {
-    type: mongoose.ObjectId,
+    type: mongoose.Schema.Types.ObjectId,
     required: true,
+    ref: "user",
   },
   likes: {
-    type: [{ type: mongoose.Schema.Types.ObjectId, ref: "user" }],
+    type: [mongoose.Schema.Types.ObjectId],
+    ref: "user",
     default: [],
   },
   createdAt: {
@@ -34,4 +38,5 @@ const clothingItemSchema = new mongoose.Schema({
     default: Date.now,
   },
 });
+
 module.exports = mongoose.model("item", clothingItemSchema);

@@ -1,31 +1,5 @@
 const clothingItemSchema = require("../models/clothingItem");
-const { badRequest, notFound, serverError } = require("../utils/errors");
-
-const createItem = (req, res) => {
-  console.log(req.user._id);
-  console.log(req);
-  console.log(req.body);
-  const owner = req.user._id;
-  const { name, weather, imageUrl } = req.body;
-
-  clothingItemSchema
-    .create({ name, weather, imageUrl, owner })
-    .then((item) => {
-      console.log(item);
-      res.status(201).send({ data: item });
-    })
-    .catch((err) => {
-      console.error(err);
-      if (err.name === "ValidationError") {
-        return res
-          .status(badRequest)
-          .send({ message: "Invalid data provided" });
-      }
-      return res
-        .status(serverError)
-        .send({ message: "An error has occurred on the server" });
-    });
-};
+const { badRequest, notFound, serverError, Forbidden} = require("../utils/errors");
 
 const getItems = (req, res) => {
   clothingItemSchema
@@ -39,27 +13,52 @@ const getItems = (req, res) => {
     });
 };
 
-const deleteItem = (req, res) => {
-  const { itemId } = req.params;
-
-  console.log(itemId);
+const createItem = (req, res) => {
+  const { name, weather, imageUrl } = req.body;
   clothingItemSchema
-    .findByIdAndDelete(itemId)
-    .orFail()
-    .then((item) => {
-      res.send(item);
-    })
+    .create({ name, weather, imageUrl, owner: req.user._id })
+    .then((item) => res.status(201).send(item))
     .catch((err) => {
       console.error(err);
-      if (err.name === "CastError") {
+      if (err.name === "ValidationError" || err.name === "CastError") {
         return res
           .status(badRequest)
           .send({ message: "Invalid data provided" });
       }
+      return res
+        .status(serverError)
+        .send({ message: "An error has occurred on the server" });
+    });
+};
+
+const deleteItem = (req, res) => {
+  const { itemId } = req.params;
+  clothingItemSchema
+    .findById(itemId)
+    .orFail()
+    .then((item) => {
+      if (item.owner.toString() !== req.user._id) {
+        return res
+          .status(Forbidden)
+          .send({ message: "You are not authorized to delete this item" });
+      }
+      return clothingItemSchema
+        .deleteOne({ _id: itemId })
+        .then(() =>res
+        .send({ message: "Item successfully deleted" })
+      );
+    })
+    .catch((err) => {
+      console.error(err);
+      if (err.name === "ValidationError" || err.name === "CastError") {
+        return res
+          .status(badRequest)
+          .send({ message: "Invalid data" });
+      }
       if (err.name === "DocumentNotFoundError") {
         return res
           .status(notFound)
-          .send({ message: "Id provided was not found" });
+          .send({ message: "Requested resource not found" });
       }
       return res
         .status(serverError)
@@ -68,26 +67,24 @@ const deleteItem = (req, res) => {
 };
 
 const likeItem = (req, res) => {
-  console.log(req.user._id);
-  clothingItemSchema
-    .findByIdAndUpdate(
-      req.params.itemId,
-      { $addToSet: { likes: req.user._id } },
-      { new: true }
-    )
+  clothingItemSchema.findByIdAndUpdate(
+    req.params.itemId,
+    { $addToSet: { likes: req.user._id } },
+    { new: true }
+  )
     .orFail()
-    .then((item) => res.status(201).send(item))
+    .then((item) => res.send(item))
     .catch((err) => {
       console.error(err);
-      if (err.name === "CastError") {
+      if (err.name === "ValidationError" || err.name === "CastError") {
         return res
           .status(badRequest)
-          .send({ message: "Invalid data provided" });
+          .send({ message: "Invalid data" });
       }
       if (err.name === "DocumentNotFoundError") {
         return res
           .status(notFound)
-          .send({ message: "Id provided was not found" });
+          .send({ message: "Requested resource not found" });
       }
       return res
         .status(serverError)
@@ -96,7 +93,6 @@ const likeItem = (req, res) => {
 };
 
 const dislikeItem = (req, res) => {
-  console.log(req.user._id);
   clothingItemSchema
     .findByIdAndUpdate(
       req.params.itemId,
@@ -107,7 +103,7 @@ const dislikeItem = (req, res) => {
     .then((item) => res.send(item))
     .catch((err) => {
       console.error(err);
-      if (err.name === "CastError") {
+      if (err.name === "ValidationError" || err.name === "CastError") {
         return res
           .status(badRequest)
           .send({ message: "Invalid data provided" });
